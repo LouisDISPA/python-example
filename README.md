@@ -1,6 +1,11 @@
 # Python example
 
 This a technical test.
+
+## requirements
+
+- `python >= 3.10`
+
 Tested with `Python 3.10.6`.
 
 ## Guidelines
