@@ -1,6 +1,8 @@
 from enum import Enum
 from datetime import datetime
 
+DATE_FORMAT = '%Y-%m-%d'
+
 
 # --- Input model classes ---
 
@@ -26,8 +28,8 @@ class Rental:
     def __init__(self, id: int, car_id: int, start_date: str, end_date: str, distance: int):
         self.id = id
         self.car_id = car_id
-        self.start_date = datetime.strptime(start_date, '%Y-%m-%d')
-        self.end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        self.start_date = datetime.strptime(start_date, DATE_FORMAT)
+        self.end_date = datetime.strptime(end_date, DATE_FORMAT)
         self.distance = distance
         self.day_count = (self.end_date - self.start_date).days + 1
 
@@ -38,7 +40,12 @@ class OptionType(Enum):
     ADDITIONAL_INSURANCE = 'additional_insurance'
 
     def price_per_day(self) -> int:
-        """Return the price per day for this option type."""
+        """
+        Return the price per day for this option type.
+
+        Execptions:
+            - ValueError: if the function is not implemented for the option type.
+        """
         match self:
             case OptionType.GPS:
                 return 500
@@ -46,12 +53,18 @@ class OptionType(Enum):
                 return 200
             case OptionType.ADDITIONAL_INSURANCE:
                 return 1000
+            case _:
+                raise ValueError(
+                    f'price_per_day not implemented for option type "{self.value}"')
 
     def credited_to(self) -> str:
         """
         Return the actor who is credited for this option type.
 
         Possible actors are 'owner', 'insurance', 'assistance' and 'drivy'.
+
+        Execptions:
+            - ValueError: if the function is not implemented for the option type.
         """
         match self:
             case OptionType.GPS:
@@ -60,6 +73,9 @@ class OptionType(Enum):
                 return 'owner'
             case OptionType.ADDITIONAL_INSURANCE:
                 return 'drivy'
+            case _:
+                raise ValueError(
+                    f'credited_to not implemented for option type "{self.value}"')
 
     def toJSON(self):
         return self.value

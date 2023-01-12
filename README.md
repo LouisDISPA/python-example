@@ -1,6 +1,6 @@
 # Python example
 
-This a technical test.
+This is a technical test.
 
 ## requirements
 

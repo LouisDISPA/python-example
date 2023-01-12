@@ -4,11 +4,10 @@ from model import Action, ActionType, Car, Rental, Option, OptionType, RentalVie
 
 # --- Constants ---
 
-DATE_FORMAT = '%Y-%m-%d'
 RENT_PRICE_RULES = [
-    PriceRule(1, 0.1),
-    PriceRule(4, 0.3),
-    PriceRule(10, 0.5),
+    PriceRule(after_day=1,  reduction_percent=0.1),
+    PriceRule(after_day=4,  reduction_percent=0.3),
+    PriceRule(after_day=10, reduction_percent=0.5),
 ]
 
 # --- Load the data from 'input.json' ---
@@ -50,26 +49,32 @@ for rental in rentals:
     drivy_fee = commission - insurance_fee - assistance_fee
     owner_fee = price - commission
 
+    fees = {
+        'owner': owner_fee,
+        'insurance': insurance_fee,
+        'assistance': assistance_fee,
+        'drivy': drivy_fee,
+    }
+
     # add the options
     for option_type in rental_options:
         price_option = rental.day_count * option_type.price_per_day()
-        price += price_option
+        credited_to = option_type.credited_to()
 
-        match option_type.credited_to():
-            case 'insurance': insurance_fee += price_option
-            case 'assistance': assistance_fee += price_option
-            case 'drivy': drivy_fee += price_option
-            case 'owner': owner_fee += price_option
+        if fees.get(credited_to) is None:
+            raise RuntimeError(
+                f'Unknown creditor "{credited_to}" with option type "{option_type.value}"')
+
+        fees[credited_to] += price_option
 
     # build the view
     options_list = list(rental_options)
-    actions = [
-        Action('driver', ActionType.DEBIT, price),
-        Action('owner', ActionType.CREDIT, owner_fee),
-        Action('insurance', ActionType.CREDIT, insurance_fee),
-        Action('assistance', ActionType.CREDIT, assistance_fee),
-        Action('drivy', ActionType.CREDIT, drivy_fee),
-    ]
+    actions = [Action('driver', ActionType.DEBIT, sum(fees.values()))]
+    actions.extend(
+        Action(credited_to, ActionType.CREDIT, fee)
+        for credited_to, fee in fees.items()
+    )
+
     rentals_view.append(RentalView(rental.id, options_list, actions))
 
 result_view = ResultView(rentals_view)
